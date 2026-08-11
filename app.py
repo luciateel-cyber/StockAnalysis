@@ -12,6 +12,7 @@ from stock_analysis.data import (
     parse_tickers,
 )
 from stock_analysis.metrics import add_indicators, compact_number, summary_metrics
+from stock_analysis.research import build_company_research, build_sector_research
 
 
 st.set_page_config(page_title="StockLens", page_icon="📈", layout="wide")
@@ -37,6 +38,11 @@ def cached_news_context(ticker: str):
     return fetch_news_context(ticker)
 
 
+@st.cache_data(ttl=3600, show_spinner=False)
+def cached_company_research(ticker: str, company_info: dict):
+    return build_company_research(ticker, company_info)
+
+
 def initialize_state() -> None:
     if "watchlist" not in st.session_state:
         st.session_state.watchlist = []
@@ -54,6 +60,12 @@ def save_to_watchlist(ticker: str) -> None:
         symbol,
         *[item for item in st.session_state.watchlist if item != symbol],
     ][:20]
+
+
+def bullet_section(title: str, bullets: list[str]) -> None:
+    st.markdown(f"**{title}**")
+    for bullet in bullets:
+        st.markdown(f"- {bullet}")
 
 
 def price_chart(data, ticker: str):
@@ -237,6 +249,8 @@ try:
         history = add_indicators(raw_history)
         company = cached_company_info(ticker)
         news_context = cached_news_context(ticker)
+        company_research = cached_company_research(ticker, company)
+        sector_research = build_sector_research(news_context)
         metrics = summary_metrics(history)
 except Exception as exc:
     st.error(f"Could not load {ticker}: {exc}")
@@ -273,9 +287,18 @@ with overview_tab:
     snapshot[3].metric("Dividend yield", (
         f"{company['dividendYield']:.2%}" if company.get("dividendYield") is not None else "—"
     ))
-    st.markdown("#### Latest news")
-    st.write(f"**{ticker}:** {news_context['stock_paragraph']}")
-    st.write(f"**{news_context['market_label'].title()}:** {news_context['market_paragraph']}")
+    st.markdown("#### Company research summary")
+    company_column, sector_column = st.columns(2)
+    with company_column:
+        bullet_section("Profitability, efficiency, and balance-sheet strength", company_research["profitability"])
+        bullet_section("Economic moat and structural advantages", company_research["moat"])
+        bullet_section("Leadership, capital allocation, and alignment", company_research["management"])
+    with sector_column:
+        st.markdown(f"**{news_context['market_label'].title()} sector research**")
+        for section, bullets in sector_research.items():
+            with st.expander(section, expanded=section in {"Macro and economic environment", "Industry demand and growth drivers"}):
+                for bullet in bullets:
+                    st.markdown(f"- {bullet}")
 
 with technical_tab:
     st.plotly_chart(indicator_chart(history), use_container_width=True)
