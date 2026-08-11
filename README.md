@@ -11,7 +11,8 @@ It includes:
 - Normalized performance comparison across several tickers
 - A personal session watchlist for quick check-ins
 - Suggested peer stocks to compare or research
-- Stock-specific and sector-market news summaries
+- Structured stock research bullets covering profitability, efficiency, balance-sheet strength, moat, and management quality
+- Structured sector research bullets covering macro conditions, demand drivers, competition, regulation, SWOT, risks, sentiment, and recent headlines
 - CSV export for both raw market data and analyzed data
 
 ## Run it
