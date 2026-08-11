@@ -15,7 +15,7 @@ from stock_analysis.metrics import add_indicators, compact_number, summary_metri
 from stock_analysis.research import build_company_research, build_sector_research
 
 
-st.set_page_config(page_title="StockLens", page_icon="📈", layout="wide")
+st.set_page_config(page_title="Numbers Don't Lie", page_icon="📈", layout="wide")
 
 
 @st.cache_data(ttl=900, show_spinner=False)
@@ -192,7 +192,7 @@ def return_chart(data, ticker: str):
     return figure
 
 
-st.title("📈 StockLens")
+st.title("📈 Numbers Don't Lie")
 st.caption("A compact research dashboard for exploring public-market data.")
 
 initialize_state()
