@@ -1,4 +1,4 @@
-# StockLens
+# Numbers Don't Lie
 
 A small, interactive stock-analysis project built with Python and Streamlit.
 
