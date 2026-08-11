@@ -8,6 +8,7 @@ from stock_analysis.data import (
     fetch_comparison,
     fetch_company_info,
     fetch_history,
+    fetch_news_context,
     parse_tickers,
 )
 from stock_analysis.metrics import add_indicators, compact_number, summary_metrics
@@ -29,6 +30,30 @@ def cached_company_info(ticker: str):
 @st.cache_data(ttl=900, show_spinner=False)
 def cached_comparison(tickers: tuple[str, ...], period: str):
     return fetch_comparison(tickers, period)
+
+
+@st.cache_data(ttl=900, show_spinner=False)
+def cached_news_context(ticker: str):
+    return fetch_news_context(ticker)
+
+
+def initialize_state() -> None:
+    if "watchlist" not in st.session_state:
+        st.session_state.watchlist = []
+    if "primary_ticker" not in st.session_state:
+        st.session_state.primary_ticker = "AAPL"
+    if "comparison_tickers" not in st.session_state:
+        st.session_state.comparison_tickers = "MSFT, GOOGL, SPY"
+
+
+def save_to_watchlist(ticker: str) -> None:
+    symbol = ticker.strip().upper()
+    if not symbol:
+        return
+    st.session_state.watchlist = [
+        symbol,
+        *[item for item in st.session_state.watchlist if item != symbol],
+    ][:20]
 
 
 def price_chart(data, ticker: str):
@@ -158,9 +183,11 @@ def return_chart(data, ticker: str):
 st.title("📈 StockLens")
 st.caption("A compact research dashboard for exploring public-market data.")
 
+initialize_state()
+
 with st.sidebar:
     st.header("Analysis settings")
-    ticker = st.text_input("Primary ticker", value="AAPL").strip().upper()
+    ticker = st.text_input("Primary ticker", key="primary_ticker").strip().upper()
     period = st.selectbox(
         "History",
         options=["3mo", "6mo", "1y", "2y", "5y", "10y"],
@@ -176,9 +203,28 @@ with st.sidebar:
     )
     comparison_text = st.text_input(
         "Compare with",
-        value="MSFT, GOOGL, SPY",
+        key="comparison_tickers",
         help="Up to five comma-separated ticker symbols.",
     )
+    if st.button("Save primary ticker", use_container_width=True):
+        save_to_watchlist(ticker)
+        st.success(f"{ticker} saved to your watchlist.")
+
+    st.subheader("Personal watchlist")
+    if st.session_state.watchlist:
+        for saved_ticker in st.session_state.watchlist:
+            load_column, remove_column = st.columns([2, 1])
+            if load_column.button(saved_ticker, key=f"load-{saved_ticker}", use_container_width=True):
+                st.session_state.primary_ticker = saved_ticker
+                st.rerun()
+            if remove_column.button("Remove", key=f"remove-{saved_ticker}", use_container_width=True):
+                st.session_state.watchlist = [
+                    item for item in st.session_state.watchlist if item != saved_ticker
+                ]
+                st.rerun()
+    else:
+        st.caption("Saved tickers will appear here for quick check-ins.")
+
     st.caption("Data may be delayed. For education and research—not investment advice.")
 
 if not ticker:
@@ -190,6 +236,7 @@ try:
         raw_history = cached_history(ticker, period)
         history = add_indicators(raw_history)
         company = cached_company_info(ticker)
+        news_context = cached_news_context(ticker)
         metrics = summary_metrics(history)
 except Exception as exc:
     st.error(f"Could not load {ticker}: {exc}")
@@ -226,6 +273,9 @@ with overview_tab:
     snapshot[3].metric("Dividend yield", (
         f"{company['dividendYield']:.2%}" if company.get("dividendYield") is not None else "—"
     ))
+    st.markdown("#### Latest news")
+    st.write(f"**{ticker}:** {news_context['stock_paragraph']}")
+    st.write(f"**{news_context['market_label'].title()}:** {news_context['market_paragraph']}")
 
 with technical_tab:
     st.plotly_chart(indicator_chart(history), use_container_width=True)
@@ -240,6 +290,23 @@ with technical_tab:
     details[2].metric("Annualized return", f"{metrics['annualized_return']:.1%}")
 
 with compare_tab:
+    st.markdown("#### Similar stocks to research")
+    st.caption(f"{ticker} is grouped with {news_context['peer_label']} names.")
+    suggestion_columns = st.columns(max(len(news_context["suggestions"]), 1))
+    current_comparisons = parse_tickers(comparison_text)
+    for index, suggestion in enumerate(news_context["suggestions"]):
+        with suggestion_columns[index]:
+            st.write(f"**{suggestion}**")
+            if st.button("View", key=f"view-{suggestion}", use_container_width=True):
+                st.session_state.primary_ticker = suggestion
+                st.rerun()
+            if st.button("Compare", key=f"compare-{suggestion}", use_container_width=True):
+                if suggestion not in current_comparisons and suggestion != ticker:
+                    st.session_state.comparison_tickers = ", ".join(
+                        [*current_comparisons, suggestion]
+                    )
+                st.rerun()
+
     comparison_tickers = parse_tickers(f"{ticker},{comparison_text}")
     comparison = cached_comparison(tuple(comparison_tickers), period)
     if comparison.empty:

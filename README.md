@@ -9,6 +9,9 @@ It includes:
 - Moving averages, daily returns, RSI, MACD, volatility, and drawdown
 - Headline company and valuation metrics
 - Normalized performance comparison across several tickers
+- A personal session watchlist for quick check-ins
+- Suggested peer stocks to compare or research
+- Stock-specific and sector-market news summaries
 - CSV export for both raw market data and analyzed data
 
 ## Run it
@@ -35,6 +38,8 @@ pytest
 
 - Market data is fetched from Yahoo Finance through `yfinance`.
 - Quotes may be delayed or incomplete.
+- Watchlists are saved for the active Streamlit session. Add persistent storage
+  if you want saved tickers to follow users across devices or visits.
 - This project is for research and education, not investment advice.
 
 ## Project layout
