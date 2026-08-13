@@ -1,4 +1,4 @@
-# Numbers Don't Lie
+# LBT Stock Analysis
 
 A small, interactive stock-analysis project built with Python and Streamlit.
 
@@ -29,10 +29,10 @@ streamlit run app.py
 
 Then open the local address shown by Streamlit.
 
-## Test it
+## Check it
 
 ```bash
-pytest
+python3 -m py_compile app.py stock_analysis/*.py
 ```
 
 ## Notes
@@ -49,5 +49,6 @@ pytest
 app.py                    Streamlit interface
 stock_analysis/data.py    Market-data access and cleanup
 stock_analysis/metrics.py Calculations and formatting
-tests/                    Unit tests for calculations
+stock_analysis/research.py Structured stock and sector research summaries
+.devcontainer/            Optional GitHub Codespaces setup
 ```

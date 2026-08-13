@@ -178,7 +178,7 @@ def _fetch_yahoo_news(ticker: str, limit: int = 5) -> list[dict[str, str]]:
     request = urllib.request.Request(
         url,
         headers={
-            "User-Agent": "StockLens/1.0",
+            "User-Agent": "LBTStockAnalysis/1.0",
             "Accept": "application/rss+xml,text/xml,*/*",
         },
     )
