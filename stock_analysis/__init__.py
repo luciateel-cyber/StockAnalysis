@@ -1,2 +1,1 @@
-"""Reusable calculations and data access for StockLens."""
-
+"""Reusable calculations and data access for LBT Stock Analysis."""
